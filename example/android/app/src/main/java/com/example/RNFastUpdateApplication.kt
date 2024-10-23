@@ -53,4 +53,6 @@ open class RNFastUpdateApplication : Application(), ReactApplication {
       load(bridgelessEnabled = true)
     }
   }
+
+  open val showSplash = true
 }

@@ -147,10 +147,10 @@ class RNFastActivityDelegate(
         if (RNFastUpdateUtil.enabledBridgelessMode) {
           val reactSurface = this@RNFastActivityDelegate.createFastUpdateSurface(context)
           reactSurface.start()
-          activity!!.setContentView(reactSurface.view)
+          activity?.setContentView(reactSurface.view)
         } else {
           val reactRootView = this@RNFastActivityDelegate.createFastUpdateRootView()
-          activity!!.setContentView(reactRootView)
+          activity?.setContentView(reactRootView)
         }
       }
     } else {

@@ -17,6 +17,7 @@ class RNFastUpdateModule(private val reactContext: ReactApplicationContext, priv
 
   @ReactMethod
   fun checkUpdate(promise: Promise) {
+    RNFastUpdateModuleImpl.checkUpdate()
   }
 
   @ReactMethod
@@ -31,6 +32,6 @@ class RNFastUpdateModule(private val reactContext: ReactApplicationContext, priv
 
   @ReactMethod(isBlockingSynchronousMethod = true)
   fun hideSplashScreen() {
-
+    RNFastUpdateModuleImpl.hideSplashScreen()
   }
 }
