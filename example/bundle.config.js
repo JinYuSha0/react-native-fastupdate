@@ -1,6 +1,6 @@
 module.exports = {
   common: {
-    whiteList: [],
-    blackList: [],
+    whiteList: ['src/components', 'src/hooks'],
+    blackList: ['src/components/title.tsx'],
   },
 };

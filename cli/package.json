@@ -5,6 +5,7 @@
   "dependencies": {
     "@babel/generator": "^7.25.9",
     "@babel/types": "^7.25.9",
+    "colors": "^1.4.0",
     "commander": "^12.1.0"
   }
 }

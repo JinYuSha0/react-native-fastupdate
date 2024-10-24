@@ -28,6 +28,7 @@ program
   )
   .option('--load-config <string>', 'JSON project config')
   .option('--verbose', 'Additional logs', () => true, false)
+  .option('--versionCode <string>', 'Native version code')
   .allowUnknownOption()
   .action(async function handleAction() {
     let config = null;
@@ -60,9 +61,16 @@ program
       afterCallbacks.push(() => {
         delDir(tempDir);
       });
+      options.bundleOutput =
+        options.platform === 'ios'
+          ? path.join(process.cwd(), './ios/common.jsbundle')
+          : path.join(
+              process.cwd(),
+              './android/app/src/main/assets/common.android.bundle'
+            );
     }
 
-    if (!options.bundleOutput) {
+    if (!options.bundleOutput && !options.common) {
       options.bundleOutput =
         options.platform === 'ios'
           ? path.join(process.cwd(), './ios/main.jsbundle')

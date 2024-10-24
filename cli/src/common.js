@@ -12,8 +12,69 @@ var _RamBundle = _interopRequireDefault(
   require('metro/src/shared/output/RamBundle')
 );
 var _path = _interopRequireDefault(require('path'));
+var _fs = _interopRequireDefault(require('fs'));
+var colors = require('colors');
+var genPathMacthRegExp = require('./utils/genPathMacthRegExp');
+var getModuleIdFactory = require('./utils/getModuleId');
+var genFileHash = require('./utils/genFileHash');
+var getVersionCode = require('./utils/getVersionCode');
+var { getCommonMap, genCommonMap } = require('./utils/commonMap');
+
 function _interopRequireDefault(e) {
   return e && e.__esModule ? e : { default: e };
+}
+
+function generateFileDetector(rootPath, bundleConfig) {
+  const {
+    common: { whiteList, blackList },
+  } = bundleConfig;
+  const whiteSet = [...new Set(whiteList), 'node_modules'].map((path) => {
+    const absolutePath = _path.default.join(rootPath, path);
+    return {
+      pathname: absolutePath,
+      isDir: _fs.default.statSync(absolutePath).isDirectory(),
+    };
+  });
+  const blackSet = [...new Set(blackList)].map((path) => {
+    const absolutePath = _path.default.join(rootPath, path);
+    return {
+      pathname: absolutePath,
+      isDir: _fs.default.statSync(absolutePath).isDirectory(),
+    };
+  });
+  const whiteListRegExp = genPathMacthRegExp([
+    { pathname: '__prelude__', isDir: false },
+    {
+      pathname: _path.default.join(__dirname, '../polyfills/require.js'),
+      isDir: false,
+    },
+    {
+      pathname: _path.default.join(rootPath, 'app.json'),
+      isDir: false,
+    },
+    {
+      pathname: `require-${_path.default.join(rootPath, 'node_modules/react-native/Libraries/Core/InitializeCore.js')}`,
+      isDir: false,
+    },
+    ...whiteSet,
+  ]);
+  const blackListRegExp = genPathMacthRegExp([
+    {
+      pathname: _path.default.join(
+        rootPath,
+        'node_modules/metro-runtime/src/polyfills/require.js'
+      ),
+      isDir: false,
+    },
+    ...blackSet,
+  ]);
+  return (filepath) => {
+    try {
+      if (blackListRegExp.test(filepath)) return false;
+      if (whiteListRegExp.test(filepath)) return true;
+    } catch {}
+    return false;
+  };
 }
 
 async function buildBundleWithConfig(
@@ -21,6 +82,30 @@ async function buildBundleWithConfig(
   config,
   bundleImpl = _bundle.default
 ) {
+  const rootPath = process.cwd();
+  const platform = args.platform;
+  const versionCode = args.versionCode ?? getVersionCode(platform);
+
+  if (versionCode === null || isNaN(+versionCode)) {
+    console.log(
+      colors.red.underline(
+        `versionCode "${versionCode}" is not a correct number`
+      )
+    );
+    return;
+  }
+
+  const commonMap = await getCommonMap(platform, versionCode);
+
+  if (commonMap) {
+    console.log(
+      colors.green(
+        `The common map whose versionCode is ${versionCode} and the platform is ${platform} already exists`
+      )
+    );
+    return;
+  }
+
   const customResolverOptions = (0, _parseKeyValueParamArray.default)(
     args.resolverOption ?? []
   );
@@ -39,6 +124,50 @@ async function buildBundleWithConfig(
     );
     throw new Error('Bundling failed');
   }
+
+  const moduleIdMap = Object.create(null);
+  let bundleConfig = {
+    common: {
+      whiteList: [],
+      blackList: [],
+    },
+  };
+  try {
+    bundleConfig = require(
+      _path.default.join(process.cwd(), 'bundle.config.js')
+    );
+  } catch {}
+
+  const originGetPolyfills = config.serializer.getPolyfills;
+  config.serializer.getPolyfills = function () {
+    return [
+      _path.default.join(__dirname, '../polyfills/require.js'),
+      ...originGetPolyfills(),
+    ];
+  };
+
+  const fileDetector = generateFileDetector(rootPath, bundleConfig);
+
+  config.serializer.processModuleFilter = function (module) {
+    const { path } = module;
+    return fileDetector(path);
+  };
+
+  const genPath = (path) => path.replace(rootPath, '');
+  const getModuleId = getModuleIdFactory(0);
+  config.serializer.createModuleIdFactory = function () {
+    return function (path) {
+      if (fileDetector(path)) {
+        const id = getModuleId(genPath(path));
+        moduleIdMap[genPath(path)] = {
+          id,
+          hash: genFileHash(path),
+        };
+        return id;
+      }
+      return null;
+    };
+  };
 
   // This is used by a bazillion of npm modules we don't control so we don't
   // have other choice than defining it as an env variable here.
@@ -67,6 +196,8 @@ async function buildBundleWithConfig(
     // $FlowIgnore[prop-missing]
     // $FlowIgnore[incompatible-exact]
     await bundleImpl.save(bundle, args, _cliTools.logger.info);
+
+    await genCommonMap(platform, versionCode, moduleIdMap);
 
     // Save the assets of the bundle
     const outputAssets = await server.getAssets({
