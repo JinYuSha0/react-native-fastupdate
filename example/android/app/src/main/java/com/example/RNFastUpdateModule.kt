@@ -6,7 +6,7 @@ import com.facebook.react.bridge.ReactContextBaseJavaModule
 import com.facebook.react.bridge.ReactMethod
 
 class RNFastUpdateModule(private val reactContext: ReactApplicationContext, private val serverHost: String) : ReactContextBaseJavaModule(reactContext) {
-  override fun getName() = "RNFastUpdate"
+  override fun getName() = "FastUpdate"
 
   override fun getConstants(): MutableMap<String, Any> {
     val constants: MutableMap<String, Any> = mutableMapOf()

@@ -23,7 +23,7 @@ open class RNFastUpdateApplication : Application(), ReactApplication {
         }
 
       override fun getBundleAssetName(): String {
-        return "index.android.bundle"
+        return "common.android.bundle"
       }
 
       override fun getJSExceptionHandler(): JSExceptionHandler {
@@ -55,4 +55,6 @@ open class RNFastUpdateApplication : Application(), ReactApplication {
   }
 
   open val showSplash = true
+
+  open val autoCloseSplash = true
 }

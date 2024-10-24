@@ -1,10 +1,13 @@
 {
-  "name": "react-native-fastupdate",
-  "version": "0.1.0",
+  "name": "react-native-fast-update",
+  "version": "0.0.1",
   "description": "hot update",
   "source": "./src/index.tsx",
   "main": "./lib/commonjs/index.js",
   "module": "./lib/module/index.js",
+  "bin": {
+    "fastupdate": "./cli/bin.js"
+  },
   "exports": {
     ".": {
       "import": {

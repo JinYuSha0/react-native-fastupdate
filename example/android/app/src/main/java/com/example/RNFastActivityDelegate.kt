@@ -1,11 +1,9 @@
 package com.example
 
 import android.annotation.SuppressLint
-import android.app.Activity
 import android.content.pm.ActivityInfo
 import android.os.Build
 import android.os.Bundle
-import android.view.ViewTreeObserver.OnGlobalLayoutListener
 import com.example.db.AppDatabase
 import com.example.db.Module
 import com.facebook.react.ReactActivity
@@ -14,15 +12,12 @@ import com.facebook.react.ReactDelegate
 import com.facebook.react.ReactInstanceEventListener
 import com.facebook.react.ReactRootView
 import com.facebook.react.bridge.ReactContext
-import com.facebook.react.common.annotations.UnstableReactNativeAPI
 import com.facebook.react.interfaces.fabric.ReactSurface
 import com.facebook.react.runtime.ReactHostImpl
-import com.facebook.react.runtime.ReactSurfaceView
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import java.time.Instant
 
 class RNFastActivityDelegate(
   private val activity: ReactActivity,
@@ -158,7 +153,10 @@ class RNFastActivityDelegate(
     }
   }
 
-  private fun onRenderComplete() {}
+  private fun onRenderComplete() {
+    val autoCloseSplash = (activity.application as RNFastUpdateApplication).autoCloseSplash
+    if (autoCloseSplash) RNFastUpdateModuleImpl.hideSplashScreen()
+  }
 
   override fun isFabricEnabled(): Boolean = fabricEnabled
 }

@@ -17,6 +17,17 @@ const Fastupdate = NativeModules.Fastupdate
       }
     );
 
-export function multiply(a: number, b: number): Promise<number> {
-  return Fastupdate.multiply(a, b);
+export const NativeConstants: INativeConstants =
+  Fastupdate?.getConstants() ?? {};
+
+export async function checkUpdate(): Promise<void> {
+  return Fastupdate.checkUpdate();
+}
+
+export async function openModule(moduleName: string): Promise<void> {
+  return Fastupdate.openModule(moduleName);
+}
+
+export function hideSplashScreen() {
+  return Fastupdate.hideSplashScreen();
 }
