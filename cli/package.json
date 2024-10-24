@@ -1,0 +1,10 @@
+{
+  "name": "cli",
+  "version": "0.0.1",
+  "packageManager": "yarn@3.6.4",
+  "dependencies": {
+    "@babel/generator": "^7.25.9",
+    "@babel/types": "^7.25.9",
+    "commander": "^12.1.0"
+  }
+}

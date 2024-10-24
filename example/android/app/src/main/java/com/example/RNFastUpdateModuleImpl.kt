@@ -40,4 +40,10 @@ object RNFastUpdateModuleImpl {
       dialog.dismiss()
     }
   }
+
+  fun getExternalFilesDir(context: ReactApplicationContext): String {
+    context.getExternalFilesDir(null)?.let {
+      return "${it.absolutePath}/"
+    } ?: throw Exception("Can not get external files dir")
+  }
 }

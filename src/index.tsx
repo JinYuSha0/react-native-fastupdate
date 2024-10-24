@@ -31,3 +31,7 @@ export async function openModule(moduleName: string): Promise<void> {
 export function hideSplashScreen() {
   return Fastupdate.hideSplashScreen();
 }
+
+export function getExternalFilesDir(): string {
+  return Fastupdate.hideSplashScreen();
+}

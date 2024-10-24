@@ -34,4 +34,9 @@ class RNFastUpdateModule(private val reactContext: ReactApplicationContext, priv
   fun hideSplashScreen() {
     RNFastUpdateModuleImpl.hideSplashScreen()
   }
+
+  @ReactMethod(isBlockingSynchronousMethod = true)
+  fun getExternalFilesDir(): String {
+    return RNFastUpdateModuleImpl.getExternalFilesDir(reactContext)
+  }
 }
