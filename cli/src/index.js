@@ -5,8 +5,12 @@ const { readFileSync } = require('fs');
 const { delDir, createDirIfNotExists } = require('./utils/fsUtils');
 const path = require('path');
 const fs = require('fs');
+const loadMetroConfig = require('./utils/loadMetroConfig').default;
 const analyzeEntryFiles = require('./utils/analyzeEntryFiles');
 const genPathImportScript = require('./utils/genPathImportScript');
+const metroBundle = require('metro/src/shared/output/bundle');
+// const metroRamBundle = require('metro/src/shared/output/RamBundle');
+const commonBuildBundleWithConfig = require('./common');
 
 program.version(
   JSON.parse(
@@ -76,7 +80,12 @@ program
     }
 
     try {
-      await bundleCommand.func(program.args, config, options);
+      const metroConfig = await loadMetroConfig(config, {
+        maxWorkers: options.maxWorkers,
+        resetCache: options.resetCache,
+        config: options.config,
+      });
+      await commonBuildBundleWithConfig(options, metroConfig, metroBundle);
     } finally {
       afterCallbacks.forEach((fun) => fun());
     }
