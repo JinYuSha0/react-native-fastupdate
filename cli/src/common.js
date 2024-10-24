@@ -16,9 +16,9 @@ var _fs = _interopRequireDefault(require('fs'));
 var colors = require('colors');
 var genPathMacthRegExp = require('./utils/genPathMacthRegExp');
 var getModuleIdFactory = require('./utils/getModuleId');
-var genFileHash = require('./utils/genFileHash');
+var { genFileHash } = require('./utils/genFileHash');
 var getVersionCode = require('./utils/getVersionCode');
-var { getCommonMap, genCommonMap } = require('./utils/commonMap');
+var { isExistsCommonMap, genCommonMap } = require('./utils/commonMap');
 
 function _interopRequireDefault(e) {
   return e && e.__esModule ? e : { default: e };
@@ -90,17 +90,6 @@ async function buildBundleWithConfig(
     console.log(
       colors.red.underline(
         `versionCode "${versionCode}" is not a correct number`
-      )
-    );
-    return;
-  }
-
-  const commonMap = await getCommonMap(platform, versionCode);
-
-  if (commonMap) {
-    console.log(
-      colors.green(
-        `The common map whose versionCode is ${versionCode} and the platform is ${platform} already exists`
       )
     );
     return;
@@ -197,7 +186,24 @@ async function buildBundleWithConfig(
     // $FlowIgnore[incompatible-exact]
     await bundleImpl.save(bundle, args, _cliTools.logger.info);
 
-    await genCommonMap(platform, versionCode, moduleIdMap);
+    const commonMapExists = await isExistsCommonMap(
+      platform,
+      versionCode,
+      JSON.stringify(moduleIdMap, null, 2)
+    );
+    if (commonMapExists) {
+      console.log(
+        colors.green(
+          `The common map whose versionCode is ${versionCode} and the platform is ${platform} already exists`
+        )
+      );
+      return;
+    }
+    await genCommonMap(
+      platform,
+      versionCode,
+      JSON.stringify(moduleIdMap, null, 2)
+    );
 
     // Save the assets of the bundle
     const outputAssets = await server.getAssets({

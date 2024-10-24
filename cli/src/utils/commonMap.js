@@ -1,17 +1,16 @@
 const path = require('path');
 const fs = require('fs');
 const { createDirIfNotExists } = require('./fsUtils');
+var { genHash } = require('./genFileHash');
 
-async function getCommonMap(platform, versionCode) {
+async function isExistsCommonMap(platform, versionCode, content) {
   const commonMapFile = path.join(
     __dirname,
     '../../',
     'commonMap',
-    `commonMap-${platform}-${versionCode}.json`
+    `commonMap-${platform}-${versionCode}-${genHash(content)}.json`
   );
-  const isExists = fs.existsSync(commonMapFile);
-  if (!isExists) return null;
-  return JSON.parse(fs.readFileSync(commonMapFile).toString());
+  return fs.existsSync(commonMapFile);
 }
 
 async function genCommonMap(platform, versionCode, content) {
@@ -19,12 +18,15 @@ async function genCommonMap(platform, versionCode, content) {
     path.join(__dirname, '../../', 'commonMap')
   );
   fs.writeFileSync(
-    path.join(commonMapDir, `commonMap-${platform}-${versionCode}.json`),
-    JSON.stringify(content, null, 2)
+    path.join(
+      commonMapDir,
+      `commonMap-${platform}-${versionCode}-${genHash(content)}.json`
+    ),
+    content
   );
 }
 
 module.exports = {
-  getCommonMap,
+  isExistsCommonMap,
   genCommonMap,
 };
