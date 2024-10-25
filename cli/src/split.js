@@ -16,6 +16,7 @@ var loadMetroConfig = require('./utils/loadMetroConfig').default;
 var genPathMacthRegExp = require('./utils/genPathMacthRegExp');
 var getModuleIdFactory = require('./utils/getModuleId');
 var { genHash, genFileHash } = require('./utils/genFileHash');
+var hbc = require('./hbc');
 
 function _interopRequireDefault(e) {
   return e && e.__esModule ? e : { default: e };
@@ -162,7 +163,9 @@ async function buildBundleWithConfig(
     // $FlowIgnore[incompatible-exact]
     await bundleImpl.save(bundle, args, _cliTools.logger.info);
 
-    const codeHash = genHash(bundle.code);
+    if (args.hbc) {
+      await hbc(args.bundleOutput);
+    }
 
     // Save the assets of the bundle
     const outputAssets = await server.getAssets({
@@ -184,7 +187,7 @@ async function buildBundleWithConfig(
       componentName,
       bundleOutput: args.bundleOutput,
       assetsDest: args.assetsDest,
-      hash: codeHash,
+      hash: genFileHash(args.bundleOutput),
     };
   } finally {
     server.end();

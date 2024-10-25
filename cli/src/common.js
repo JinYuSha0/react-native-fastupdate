@@ -25,6 +25,7 @@ var {
 } = require('./utils/commonMap');
 var genPathImportScript = require('./utils/genPathImportScript');
 var { delDir, createDirIfNotExists } = require('./utils/fsUtils');
+var hbc = require('./hbc');
 
 function _interopRequireDefault(e) {
   return e && e.__esModule ? e : { default: e };
@@ -225,6 +226,10 @@ async function buildBundleWithConfig(
     // $FlowIgnore[incompatible-exact]
     await bundleImpl.save(bundle, args, _cliTools.logger.info);
 
+    if (args.hbc) {
+      await hbc(args.bundleOutput);
+    }
+
     const codeHash = genHash(bundle.code);
     const commonMapExists = await isExistsCommonMap(
       platform,
@@ -237,7 +242,10 @@ async function buildBundleWithConfig(
         versionCode,
         codeHash,
         JSON.stringify(
-          { common: { id: -1, hash: codeHash }, ...moduleIdMap },
+          {
+            common: { id: -1, hash: genFileHash(args.bundleOutput) },
+            ...moduleIdMap,
+          },
           null,
           2
         )

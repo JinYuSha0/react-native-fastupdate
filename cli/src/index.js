@@ -202,4 +202,11 @@ program.option(
   false
 );
 
+program.option(
+  '--hbc [boolean]',
+  'Use hermes bytecode (default: true)',
+  (val) => val !== 'false',
+  true
+);
+
 program.parse(process.argv);
