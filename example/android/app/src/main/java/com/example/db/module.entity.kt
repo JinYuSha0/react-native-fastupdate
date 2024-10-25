@@ -13,7 +13,7 @@ enum class ModuleType(value: Int) {
 
 @Entity(
   tableName = "module",
-  indices = [Index(value = ["name"])]
+  indices = [Index(value = ["name", "hash"], unique = true)]
 )
 data class Module(
   @PrimaryKey(autoGenerate = true) val id: Long = 0,

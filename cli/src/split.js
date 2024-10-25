@@ -57,7 +57,6 @@ function generateFileDetector(rootPath, moduleIdMap) {
       if (moduleInfo && moduleInfo.hash === genFileHash(filepath)) {
         return false;
       }
-      console.log(filepath, blackListRegExp.test(filepath));
       return true;
     } catch {}
     return true;

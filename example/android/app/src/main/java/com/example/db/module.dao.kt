@@ -13,6 +13,9 @@ interface ModuleDao {
   @Update
   suspend fun update(module: Module)
 
+  @Insert
+  suspend fun insertBatch(modules: List<Module>)
+
   @Query("SELECT * FROM module WHERE name = :name AND version_code = :versionCode AND enabled = 1 ORDER BY id DESC LIMIT 1")
   suspend fun findAvailableModuleByName(name: String, versionCode: Long): Module?
 
@@ -21,4 +24,7 @@ interface ModuleDao {
 
   @Query("UPDATE module SET exception_count = exception_count + 1, update_time = :updateTime WHERE id = :moduleId")
   suspend fun incrementExceptionCount(moduleId: Long, updateTime: Long)
+
+  @Query("SELECT COUNT(*) FROM module WHERE version_code = :versionCode")
+  suspend fun countModulesByVersionCode(versionCode: Long): Int
 }

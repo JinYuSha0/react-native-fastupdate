@@ -1,0 +1,14 @@
+[
+  {
+    "name": "Home",
+    "hash": "e1c623db7e1b8a1dec2d6ba90a0e2d1a",
+    "filepath": "assets://Home.android.bundle",
+    "type": 1
+  },
+  {
+    "name": "App",
+    "hash": "52e3b5f45453299447961496619f03e9",
+    "filepath": "assets://App.android.bundle",
+    "type": 1
+  }
+]

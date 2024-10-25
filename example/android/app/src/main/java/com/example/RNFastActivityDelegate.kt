@@ -37,6 +37,7 @@ class RNFastActivityDelegate(
     };
 
     CoroutineScope(Dispatchers.IO).launch {
+      (activity.application as RNFastUpdateApplication).initialModule.await()
       val moduleRepository = AppDatabase.getModuleRepository(this@RNFastActivityDelegate.context)
       if (mainComponentName != null) {
         val module = moduleRepository.findAvailableModuleByName(mainComponentName)

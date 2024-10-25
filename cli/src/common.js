@@ -18,7 +18,11 @@ var loadMetroConfig = require('./utils/loadMetroConfig').default;
 var genPathMacthRegExp = require('./utils/genPathMacthRegExp');
 var getModuleIdFactory = require('./utils/getModuleId');
 var { genHash, genFileHash } = require('./utils/genFileHash');
-var { isExistsCommonMap, genCommonMap } = require('./utils/commonMap');
+var {
+  isExistsCommonMap,
+  genCommonMap,
+  getLatestCommonMap,
+} = require('./utils/commonMap');
 var genPathImportScript = require('./utils/genPathImportScript');
 var { delDir, createDirIfNotExists } = require('./utils/fsUtils');
 
@@ -86,17 +90,6 @@ async function buildBundleWithConfig(
   versionCode,
   entryFiles
 ) {
-  const combineEntryCode = genPathImportScript(entryFiles);
-  const afterCallbacks = [];
-  const tempDir = createDirIfNotExists(
-    _path.default.join(__dirname, '../', `./temp/${Date.now()}`)
-  );
-  const combineEntryFile = _path.default.join(tempDir, 'combineEntry.js');
-  _fs.default.writeFileSync(combineEntryFile, combineEntryCode);
-  args.entryFile = combineEntryFile;
-  afterCallbacks.push(() => {
-    delDir(tempDir);
-  });
   args.bundleOutput =
     args.platform === 'ios'
       ? _path.default.join(process.cwd(), './ios/common.jsbundle')
@@ -104,6 +97,33 @@ async function buildBundleWithConfig(
           process.cwd(),
           './android/app/src/main/assets/common.android.bundle'
         );
+
+  if (
+    args.common === false &&
+    (await isExistsCommonMap(args.platform, versionCode)) &&
+    _fs.default.existsSync(args.bundleOutput) &&
+    genFileHash(args.bundleOutput) ===
+      (await getLatestCommonMap(args.platform, versionCode))?.common?.hash
+  ) {
+    return {
+      common: true,
+      bundleOutput: args.bundleOutput,
+      assetsDest: args.assetsDest,
+      hash: genFileHash(args.bundleOutput),
+    };
+  }
+
+  const combineEntryCode = genPathImportScript(entryFiles);
+  const afterCallbacks = [];
+  const tempDir = createDirIfNotExists(
+    _path.default.join(__dirname, '../', `./temp/${Date.now()}`)
+  );
+  const combineEntryFile = _path.default.join(tempDir, 'combineEntry.js');
+  args.entryFile = combineEntryFile;
+  _fs.default.writeFileSync(combineEntryFile, combineEntryCode);
+  afterCallbacks.push(() => {
+    delDir(tempDir);
+  });
 
   const config = await loadMetroConfig(ctx, {
     maxWorkers: args.maxWorkers,
@@ -216,7 +236,11 @@ async function buildBundleWithConfig(
         platform,
         versionCode,
         codeHash,
-        JSON.stringify(moduleIdMap, null, 2)
+        JSON.stringify(
+          { common: { id: -1, hash: codeHash }, ...moduleIdMap },
+          null,
+          2
+        )
       );
     } else {
       console.log(
@@ -242,7 +266,7 @@ async function buildBundleWithConfig(
     );
 
     return {
-      common: args.common,
+      common: true,
       bundleOutput: args.bundleOutput,
       assetsDest: args.assetsDest,
       hash: codeHash,

@@ -11,8 +11,13 @@ const commonBuildBundleWithConfig = require('./common');
 const splitBuildBundleWithConfig = require('./split');
 const getVersionCode = require('./utils/getVersionCode');
 const colors = require('colors');
-const { isExistsCommonMap, getLatestCommonMap } = require('./utils/commonMap');
+const { getLatestCommonMap } = require('./utils/commonMap');
 const getRegisterComponentName = require('./utils/getRegisterComponentName');
+
+const ModuleType = {
+  TYPE_COMMON: 0,
+  TYPE_SPLIT: 1,
+};
 
 program.version(
   JSON.parse(
@@ -69,21 +74,13 @@ program
           : path.join(process.cwd(), './android/app/src/main/res');
     }
 
-    const results = [];
-
-    if (
-      options.common ||
-      !(await isExistsCommonMap(options.platform, versionCode))
-    ) {
-      const commonRes = await commonBuildBundleWithConfig(
-        { ...options },
-        config,
-        metroBundle,
-        versionCode,
-        entryFiles
-      );
-      results.push(commonRes);
-    }
+    await commonBuildBundleWithConfig(
+      { ...options },
+      config,
+      metroBundle,
+      versionCode,
+      entryFiles
+    );
 
     const splipModules = (
       await Promise.all(
@@ -121,6 +118,23 @@ program
             commonMapSize + (index + 1) * 100000000
           )
         )
+    );
+
+    const modulesConfig = splitRes.map((module) => ({
+      name: module.componentName ?? '',
+      hash: module.hash,
+      filepath: `assets://${path.basename(module.bundleOutput)}`,
+      type: module.common ? ModuleType.TYPE_COMMON : ModuleType.TYPE_SPLIT,
+    }));
+
+    fs.writeFileSync(
+      path.join(
+        options.platform === 'ios'
+          ? path.join(process.cwd(), './ios')
+          : path.join(process.cwd(), './android/app/src/main/assets'),
+        'modules.config.json'
+      ),
+      JSON.stringify(modulesConfig, null, 2)
     );
   });
 

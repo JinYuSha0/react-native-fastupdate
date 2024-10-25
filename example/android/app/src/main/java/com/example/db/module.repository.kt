@@ -11,6 +11,12 @@ class ModuleRepository(private val moduleDao: ModuleDao) {
     }
   }
 
+  suspend fun insertModuleBatch(modules: List<Module>) {
+    withContext(Dispatchers.IO) {
+      moduleDao.insertBatch(modules)
+    }
+  }
+
   suspend fun findAvailableModuleByName(name: String): Module? {
     return withContext(Dispatchers.IO) {
       val versionCode = BuildConfig.VERSION_CODE.toLong()
@@ -29,6 +35,13 @@ class ModuleRepository(private val moduleDao: ModuleDao) {
     return withContext(Dispatchers.IO) {
       val updateTime = System.currentTimeMillis()
       moduleDao.incrementExceptionCount(moduleId, updateTime)
+    }
+  }
+
+  suspend fun countModulesByVersionCode(): Int {
+    return withContext(Dispatchers.IO) {
+      val versionCode = BuildConfig.VERSION_CODE.toLong()
+      moduleDao.countModulesByVersionCode(versionCode)
     }
   }
 }
