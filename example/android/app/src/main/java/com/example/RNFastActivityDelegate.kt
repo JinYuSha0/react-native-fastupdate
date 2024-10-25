@@ -66,6 +66,10 @@ class RNFastActivityDelegate(
     }
   }
 
+  override fun getLaunchOptions(): Bundle? {
+    return appProperties?.getBundle("initialProps")
+  }
+
   private fun fastUpdateLoadApp(appKey: String) {
     if (reactNativeHost.useDeveloperSupport) {
       this.loadApp(appKey)

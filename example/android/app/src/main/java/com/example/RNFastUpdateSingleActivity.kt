@@ -11,7 +11,8 @@ open class RNFastUpdateSingleActivity : ReactActivity() {
   }
 
   override fun onCreate(savedInstanceState: Bundle?) {
-    if ((application as RNFastUpdateApplication).showSplash) {
+    if ((application as RNFastUpdateApplication).showSplash
+      && savedInstanceState?.getBoolean("noSplash") != true) {
       RNFastUpdateModuleImpl.showSplashScreen(this)
     }
     super.onCreate(savedInstanceState)

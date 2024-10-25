@@ -1,10 +1,11 @@
 package com.example
 
 import android.app.Activity
-import android.app.Dialog
 import android.content.Intent
 import com.example.splash.RNFastUpdateSplashDialog
+import com.facebook.react.bridge.Arguments
 import com.facebook.react.bridge.ReactApplicationContext
+import com.facebook.react.bridge.ReadableMap
 import java.lang.ref.WeakReference
 
 object RNFastUpdateModuleImpl {
@@ -15,11 +16,13 @@ object RNFastUpdateModuleImpl {
     mDialog.get()?.setProgress(50)
   }
 
-  fun openModule(reactContext: ReactApplicationContext, moduleName: String) {
+  fun openModule(reactContext: ReactApplicationContext, moduleName: String, initialProps: ReadableMap) {
     val activity = reactContext.currentActivity
     if (RNFastUpdateUtil.isActivityAlive(activity)) {
       val intent = Intent(reactContext, RNFastUpdateSingleActivity::class.java)
       intent.putExtra("moduleName", moduleName)
+      intent.putExtra("noSplash", true)
+      intent.putExtra("initialProps", Arguments.toBundle(initialProps))
       activity?.startActivity(intent)
     }
   }

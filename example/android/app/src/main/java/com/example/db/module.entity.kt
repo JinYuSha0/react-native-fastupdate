@@ -6,10 +6,9 @@ import androidx.room.Index
 import androidx.room.PrimaryKey
 import com.example.BuildConfig
 
-enum class ModuleType {
-  TYPE_COMMON,
-  TYPE_BOOT,
-  TYPE_SPLIT
+enum class ModuleType(value: Int) {
+  TYPE_COMMON(0),
+  TYPE_SPLIT(1)
 }
 
 @Entity(
@@ -22,7 +21,7 @@ data class Module(
   @ColumnInfo(name = "hash") val hash: String,
   @ColumnInfo(name = "file_path") val filepath: String,
   @ColumnInfo(name = "version_code") val versionCode: Long = BuildConfig.VERSION_CODE.toLong(),
-  @ColumnInfo(name = "type") val type: ModuleType = ModuleType.TYPE_SPLIT,
+  @ColumnInfo(name = "type") val type: Int = ModuleType.TYPE_SPLIT.ordinal,
   @ColumnInfo(name = "enabled") val enabled: Boolean = true,
   @ColumnInfo(name = "usage_count") val usageCount: Long = 0,
   @ColumnInfo(name = "exception_count") val exceptionCount: Long = 0,

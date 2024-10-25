@@ -14,11 +14,13 @@ var _RamBundle = _interopRequireDefault(
 var _path = _interopRequireDefault(require('path'));
 var _fs = _interopRequireDefault(require('fs'));
 var colors = require('colors');
+var loadMetroConfig = require('./utils/loadMetroConfig').default;
 var genPathMacthRegExp = require('./utils/genPathMacthRegExp');
 var getModuleIdFactory = require('./utils/getModuleId');
-var { genFileHash } = require('./utils/genFileHash');
-var getVersionCode = require('./utils/getVersionCode');
+var { genHash, genFileHash } = require('./utils/genFileHash');
 var { isExistsCommonMap, genCommonMap } = require('./utils/commonMap');
+var genPathImportScript = require('./utils/genPathImportScript');
+var { delDir, createDirIfNotExists } = require('./utils/fsUtils');
 
 function _interopRequireDefault(e) {
   return e && e.__esModule ? e : { default: e };
@@ -79,21 +81,38 @@ function generateFileDetector(rootPath, bundleConfig) {
 
 async function buildBundleWithConfig(
   args,
-  config,
-  bundleImpl = _bundle.default
+  ctx,
+  bundleImpl = _bundle.default,
+  versionCode,
+  entryFiles
 ) {
+  const combineEntryCode = genPathImportScript(entryFiles);
+  const afterCallbacks = [];
+  const tempDir = createDirIfNotExists(
+    _path.default.join(__dirname, '../', `./temp/${Date.now()}`)
+  );
+  const combineEntryFile = _path.default.join(tempDir, 'combineEntry.js');
+  _fs.default.writeFileSync(combineEntryFile, combineEntryCode);
+  args.entryFile = combineEntryFile;
+  afterCallbacks.push(() => {
+    delDir(tempDir);
+  });
+  args.bundleOutput =
+    args.platform === 'ios'
+      ? _path.default.join(process.cwd(), './ios/common.jsbundle')
+      : _path.default.join(
+          process.cwd(),
+          './android/app/src/main/assets/common.android.bundle'
+        );
+
+  const config = await loadMetroConfig(ctx, {
+    maxWorkers: args.maxWorkers,
+    resetCache: args.resetCache,
+    config: args.config,
+  });
+
   const rootPath = process.cwd();
   const platform = args.platform;
-  const versionCode = args.versionCode ?? getVersionCode(platform);
-
-  if (versionCode === null || isNaN(+versionCode)) {
-    console.log(
-      colors.red.underline(
-        `versionCode "${versionCode}" is not a correct number`
-      )
-    );
-    return;
-  }
 
   const customResolverOptions = (0, _parseKeyValueParamArray.default)(
     args.resolverOption ?? []
@@ -114,7 +133,7 @@ async function buildBundleWithConfig(
     throw new Error('Bundling failed');
   }
 
-  const moduleIdMap = Object.create(null);
+  const moduleIdMap = Object.create({});
   let bundleConfig = {
     common: {
       whiteList: [],
@@ -127,6 +146,10 @@ async function buildBundleWithConfig(
     );
   } catch {}
 
+  const genPath = (path) => path.replace(rootPath, '');
+  const getModuleId = getModuleIdFactory(0);
+  const fileDetector = generateFileDetector(rootPath, bundleConfig);
+
   const originGetPolyfills = config.serializer.getPolyfills;
   config.serializer.getPolyfills = function () {
     return [
@@ -135,15 +158,11 @@ async function buildBundleWithConfig(
     ];
   };
 
-  const fileDetector = generateFileDetector(rootPath, bundleConfig);
-
   config.serializer.processModuleFilter = function (module) {
     const { path } = module;
     return fileDetector(path);
   };
 
-  const genPath = (path) => path.replace(rootPath, '');
-  const getModuleId = getModuleIdFactory(0);
   config.serializer.createModuleIdFactory = function () {
     return function (path) {
       if (fileDetector(path)) {
@@ -186,24 +205,26 @@ async function buildBundleWithConfig(
     // $FlowIgnore[incompatible-exact]
     await bundleImpl.save(bundle, args, _cliTools.logger.info);
 
+    const codeHash = genHash(bundle.code);
     const commonMapExists = await isExistsCommonMap(
       platform,
       versionCode,
-      JSON.stringify(moduleIdMap, null, 2)
+      codeHash
     );
-    if (commonMapExists) {
+    if (!commonMapExists) {
+      await genCommonMap(
+        platform,
+        versionCode,
+        codeHash,
+        JSON.stringify(moduleIdMap, null, 2)
+      );
+    } else {
       console.log(
         colors.green(
           `The common map whose versionCode is ${versionCode} and the platform is ${platform} already exists`
         )
       );
-      return;
     }
-    await genCommonMap(
-      platform,
-      versionCode,
-      JSON.stringify(moduleIdMap, null, 2)
-    );
 
     // Save the assets of the bundle
     const outputAssets = await server.getAssets({
@@ -213,14 +234,22 @@ async function buildBundleWithConfig(
     });
 
     // When we're done saving bundle output and the assets, we're done.
-    return await (0, _saveAssets.default)(
+    await (0, _saveAssets.default)(
       outputAssets,
       args.platform,
       args.assetsDest,
       args.assetCatalogDest
     );
+
+    return {
+      common: args.common,
+      bundleOutput: args.bundleOutput,
+      assetsDest: args.assetsDest,
+      hash: codeHash,
+    };
   } finally {
     server.end();
+    afterCallbacks.forEach((func) => func());
   }
 }
 

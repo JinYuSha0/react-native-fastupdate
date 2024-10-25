@@ -4,6 +4,7 @@ import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReactContextBaseJavaModule
 import com.facebook.react.bridge.ReactMethod
+import com.facebook.react.bridge.ReadableMap
 
 class RNFastUpdateModule(private val reactContext: ReactApplicationContext, private val serverHost: String) : ReactContextBaseJavaModule(reactContext) {
   override fun getName() = "FastUpdate"
@@ -21,9 +22,9 @@ class RNFastUpdateModule(private val reactContext: ReactApplicationContext, priv
   }
 
   @ReactMethod
-  fun openModule(moduleName: String, promise: Promise) {
+  fun openModule(moduleName: String, initialProps: ReadableMap, promise: Promise) {
     try {
-      RNFastUpdateModuleImpl.openModule(reactContext, moduleName)
+      RNFastUpdateModuleImpl.openModule(reactContext, moduleName, initialProps)
       promise.resolve(true)
     } catch (e: Exception) {
       promise.reject(e)

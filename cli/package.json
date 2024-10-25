@@ -3,6 +3,7 @@
   "version": "0.0.1",
   "packageManager": "yarn@3.6.4",
   "dependencies": {
+    "@babel/core": "^7.25.9",
     "@babel/generator": "^7.25.9",
     "@babel/types": "^7.25.9",
     "colors": "^1.4.0",

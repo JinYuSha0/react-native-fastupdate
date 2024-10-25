@@ -24,8 +24,11 @@ export async function checkUpdate(): Promise<void> {
   return Fastupdate.checkUpdate();
 }
 
-export async function openModule(moduleName: string): Promise<void> {
-  return Fastupdate.openModule(moduleName);
+export async function openModule(
+  moduleName: string,
+  initialProps?: Record<string, any>
+): Promise<void> {
+  return Fastupdate.openModule(moduleName, initialProps);
 }
 
 export function hideSplashScreen() {
