@@ -12,7 +12,7 @@ var _RamBundle = _interopRequireDefault(
   require('metro/src/shared/output/RamBundle')
 );
 var _path = _interopRequireDefault(require('path'));
-var loadMetroConfig = require('./utils/loadMetroConfig').default;
+var loadMetroConfig = require('./utils/bundle/inner/loadMetroConfig').default;
 var genPathMacthRegExp = require('./utils/genPathMacthRegExp');
 var getModuleIdFactory = require('./utils/getModuleId');
 var { genHash, genFileHash } = require('./utils/genFileHash');
