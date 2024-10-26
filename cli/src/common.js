@@ -31,7 +31,14 @@ function _interopRequireDefault(e) {
   return e && e.__esModule ? e : { default: e };
 }
 
-function generateFileDetector(rootPath, bundleConfig) {
+const rootPath = process.cwd() + _path.default.sep;
+const genPath = (path) => {
+  path = path.replace(rootPath, '');
+  path = path.replace(_path.default.join(rootPath, '../'), '');
+  return path;
+};
+
+function generateFileDetector(bundleConfig) {
   const {
     common: { whiteList, blackList },
   } = bundleConfig;
@@ -42,7 +49,7 @@ function generateFileDetector(rootPath, bundleConfig) {
       isDir: _fs.default.statSync(absolutePath).isDirectory(),
     };
   });
-  const blackSet = [...new Set(blackList)].map((path) => {
+  const blackSet = [...new Set(blackList), '../node_modules'].map((path) => {
     const absolutePath = _path.default.join(rootPath, path);
     return {
       pathname: absolutePath,
@@ -114,7 +121,13 @@ async function buildBundleWithConfig(
     };
   }
 
-  const combineEntryCode = genPathImportScript(entryFiles);
+  const combineEntryCode = genPathImportScript([
+    ...entryFiles,
+    _path.default.join(
+      rootPath,
+      'node_modules/react-native-fast-update/lib/commonjs/bootstrap'
+    ),
+  ]);
   const afterCallbacks = [];
   const tempDir = createDirIfNotExists(
     _path.default.join(__dirname, '../', `./temp/${Date.now()}`)
@@ -132,7 +145,6 @@ async function buildBundleWithConfig(
     config: args.config,
   });
 
-  const rootPath = process.cwd();
   const platform = args.platform;
 
   const customResolverOptions = (0, _parseKeyValueParamArray.default)(
@@ -167,9 +179,8 @@ async function buildBundleWithConfig(
     );
   } catch {}
 
-  const genPath = (path) => path.replace(rootPath, '');
   const getModuleId = getModuleIdFactory(0);
-  const fileDetector = generateFileDetector(rootPath, bundleConfig);
+  const fileDetector = generateFileDetector(bundleConfig);
 
   const originGetPolyfills = config.serializer.getPolyfills;
   config.serializer.getPolyfills = function () {
@@ -186,6 +197,9 @@ async function buildBundleWithConfig(
 
   config.serializer.createModuleIdFactory = function () {
     return function (path) {
+      if (moduleIdMap[genPath(path)]) {
+        return moduleIdMap[genPath(path)].id;
+      }
       if (fileDetector(path)) {
         const id = getModuleId(genPath(path));
         moduleIdMap[genPath(path)] = {

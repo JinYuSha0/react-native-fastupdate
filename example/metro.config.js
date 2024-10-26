@@ -11,9 +11,6 @@ const config = {
   resolver: {
     unstable_enableSymlinks: true,
     unstable_enablePackageExports: true,
-    extraNodeModules: {
-      app: path.resolve(__dirname, '../'),
-    },
   },
   watchFolders: [path.resolve(__dirname, '../')],
 };

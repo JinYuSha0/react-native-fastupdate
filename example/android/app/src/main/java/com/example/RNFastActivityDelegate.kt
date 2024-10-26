@@ -129,9 +129,6 @@ class RNFastActivityDelegate(
   private fun createFastUpdateRootView(): ReactRootView {
     val reactRootView = ReactRootView(activity)
     reactRootView.setIsFabric(this.isFabricEnabled)
-    reactRootView.setEventListener {
-      onRenderComplete()
-    }
     RNFastUpdateUtil.setPrivateProperty(reactRootView, "mReactInstanceManager", reactInstanceManager)
     RNFastUpdateUtil.setPrivateProperty(reactRootView, "mJSModuleName", mainComponentName)
     RNFastUpdateUtil.setPrivateProperty(reactRootView, "mAppProperties", appProperties)
@@ -156,11 +153,6 @@ class RNFastActivityDelegate(
     } else {
       throw IllegalStateException("Current Activity is not alive")
     }
-  }
-
-  private fun onRenderComplete() {
-    val autoCloseSplash = (activity.application as RNFastUpdateApplication).autoCloseSplash
-    if (autoCloseSplash) RNFastUpdateModuleImpl.hideSplashScreen()
   }
 
   override fun isFabricEnabled(): Boolean = fabricEnabled

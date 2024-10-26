@@ -1,9 +1,13 @@
-import React, {memo} from 'react';
+import React, {memo, useEffect} from 'react';
 import {View, Text, StyleSheet, SafeAreaView, ScrollView} from 'react-native';
+import {hideSplashScreen} from 'react-native-fast-update';
 
 interface HomeProps {}
 
 const Home: React.FC<HomeProps> = ({}) => {
+  useEffect(() => {
+    hideSplashScreen();
+  }, []);
   return (
     <SafeAreaView>
       <ScrollView>

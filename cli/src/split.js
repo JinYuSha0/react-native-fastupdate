@@ -15,15 +15,21 @@ var _path = _interopRequireDefault(require('path'));
 var loadMetroConfig = require('./utils/bundle/inner/loadMetroConfig').default;
 var genPathMacthRegExp = require('./utils/genPathMacthRegExp');
 var getModuleIdFactory = require('./utils/getModuleId');
-var { genHash, genFileHash } = require('./utils/genFileHash');
+var { genFileHash } = require('./utils/genFileHash');
 var hbc = require('./hbc');
 
 function _interopRequireDefault(e) {
   return e && e.__esModule ? e : { default: e };
 }
 
-function generateFileDetector(rootPath, moduleIdMap) {
-  const genPath = (path) => path.replace(rootPath, '');
+const rootPath = process.cwd() + _path.default.sep;
+const genPath = (path) => {
+  path = path.replace(rootPath, '');
+  path = path.replace(_path.default.join(rootPath, '../'), '');
+  return path;
+};
+
+function generateFileDetector(moduleIdMap) {
   const blackListRegExp = genPathMacthRegExp([
     { pathname: '__prelude__', isDir: false },
     {
@@ -42,12 +48,8 @@ function generateFileDetector(rootPath, moduleIdMap) {
       isDir: false,
     },
     {
-      pathname: _path.default.join(
-        rootPath,
-        '../',
-        'node_modules/metro-runtime/src/polyfills/require.js'
-      ),
-      isDir: false,
+      pathname: _path.default.join(rootPath, '../node_modules'),
+      isDir: true,
     },
   ]);
 
@@ -89,9 +91,6 @@ async function buildBundleWithConfig(
     config: args.config,
   });
 
-  const rootPath = process.cwd();
-  const platform = args.platform;
-
   const customResolverOptions = (0, _parseKeyValueParamArray.default)(
     args.resolverOption ?? []
   );
@@ -111,8 +110,7 @@ async function buildBundleWithConfig(
     throw new Error('Bundling failed');
   }
 
-  const fileDetector = generateFileDetector(rootPath, moduleIdMap);
-  const genPath = (path) => path.replace(rootPath, '');
+  const fileDetector = generateFileDetector(moduleIdMap);
   const getModuleId = getModuleIdFactory(startId);
 
   config.serializer.getPolyfills = function () {

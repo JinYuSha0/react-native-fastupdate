@@ -26,8 +26,6 @@ import java.io.InputStreamReader
 open class RNFastUpdateApplication : Application(), ReactApplication {
   open val showSplash = true
 
-  open val autoCloseSplash = true
-
   val initialModule = CompletableDeferred<Boolean>()
 
   override val reactNativeHost: ReactNativeHost =

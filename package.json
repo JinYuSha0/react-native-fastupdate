@@ -18,6 +18,16 @@
         "types": "./lib/typescript/commonjs/src/index.d.ts",
         "default": "./lib/commonjs/index.js"
       }
+    },
+    "./bootstrap": {
+      "import": {
+        "types": "./lib/typescript/module/src/bootstrap.d.ts",
+        "default": "./lib/module/bootstrap.js"
+      },
+      "require": {
+        "types": "./lib/typescript/commonjs/src/bootstrap.d.ts",
+        "default": "./lib/commonjs/bootstrap.js"
+      }
     }
   },
   "files": [
