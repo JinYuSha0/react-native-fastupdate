@@ -65,6 +65,13 @@
   "publishConfig": {
     "registry": "https://registry.npmjs.org/"
   },
+  "dependencies": {
+    "@babel/core": "^7.25.9",
+    "@babel/generator": "^7.25.9",
+    "@babel/types": "^7.25.9",
+    "colors": "^1.4.0",
+    "commander": "^12.1.0"
+  },
   "devDependencies": {
     "@commitlint/config-conventional": "^17.0.2",
     "@evilmartians/lefthook": "^1.5.0",
@@ -93,11 +100,7 @@
     "react": "*",
     "react-native": "*"
   },
-  "workspaces": [
-    "example",
-    "cli"
-  ],
-  "packageManager": "yarn@3.6.4",
+  "packageManager": "yarn@4.1.1",
   "jest": {
     "preset": "react-native",
     "modulePathIgnorePatterns": [

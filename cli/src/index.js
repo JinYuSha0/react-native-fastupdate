@@ -21,7 +21,7 @@ const ModuleType = {
 
 program.version(
   JSON.parse(
-    readFileSync(path.resolve(__dirname, '..', 'package.json'), 'utf8')
+    readFileSync(path.resolve(__dirname, '../../', 'package.json'), 'utf8')
   ).version
 );
 
@@ -147,9 +147,7 @@ function parseFilepath(value, prev) {
 }
 
 function replaceOption(name, option) {
-  const index = bundleCommand.options.findIndex(
-    (option) => option.name === name
-  );
+  const index = bundleCommand.options.findIndex((item) => item.name === name);
   if (index > -1) {
     bundleCommand.options[index] = option;
   }
