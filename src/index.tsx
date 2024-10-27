@@ -1,4 +1,5 @@
 import { NativeModules, Platform } from 'react-native';
+export { FastUpdateProvider, useFastUpdateContext } from './provider';
 
 const LINKING_ERROR =
   `The package 'react-native-fastupdate' doesn't seem to be linked. Make sure: \n\n` +

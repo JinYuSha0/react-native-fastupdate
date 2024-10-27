@@ -4,6 +4,7 @@ import { getExternalFilesDir } from './index';
 import { setCustomSourceTransformer } from 'react-native/Libraries/Image/resolveAssetSource';
 
 class SmartAssetsImpl {
+  private inited = false;
   private externalFilesDir: string | null;
 
   constructor() {
@@ -11,6 +12,7 @@ class SmartAssetsImpl {
   }
 
   init() {
+    if (this.inited) return;
     setCustomSourceTransformer((resolver: any) => {
       if (resolver.isLoadedFromServer()) {
         return resolver.assetServerURL();
@@ -27,6 +29,7 @@ class SmartAssetsImpl {
         return resolver.scaledAssetURLNearBundle();
       }
     });
+    this.inited = true;
   }
 }
 

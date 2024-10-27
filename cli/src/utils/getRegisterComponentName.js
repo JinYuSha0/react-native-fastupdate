@@ -1,9 +1,8 @@
 const babel = require('@babel/core');
 const fs = require('fs');
-const colors = require('colors');
 
 function getRegisterComponentName(filepath) {
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve) => {
     const content = fs.readFileSync(filepath);
     let componentName;
     babel.transform(content, {
@@ -34,18 +33,7 @@ function getRegisterComponentName(filepath) {
             },
           },
           post() {
-            if (!componentName) {
-              console.log(
-                colors.red.underline(
-                  `Unable to get module name registered for file ${filepath}`
-                )
-              );
-              reject(
-                new Error(
-                  `Unable to get module name registered for file ${filepath}`
-                )
-              );
-            }
+            resolve(null);
           },
         },
       ],

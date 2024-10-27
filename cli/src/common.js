@@ -121,13 +121,7 @@ async function buildBundleWithConfig(
     };
   }
 
-  const combineEntryCode = genPathImportScript([
-    ...entryFiles,
-    _path.default.join(
-      rootPath,
-      'node_modules/react-native-fast-update/lib/commonjs/bootstrap'
-    ),
-  ]);
+  const combineEntryCode = genPathImportScript(entryFiles);
   const afterCallbacks = [];
   const tempDir = createDirIfNotExists(
     _path.default.join(__dirname, '../', `./temp/${Date.now()}`)
