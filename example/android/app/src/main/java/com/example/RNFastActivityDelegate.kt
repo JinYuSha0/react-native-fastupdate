@@ -21,26 +21,39 @@ import kotlinx.coroutines.launch
 
 class RNFastActivityDelegate(
   private val activity: ReactActivity,
-  private val mainComponentName: String?,
+  private var mainComponentName: String?,
   private val fabricEnabled: Boolean = false,
 ) : ReactActivityDelegate(activity, mainComponentName) {
   private val dbSelectResult = CompletableDeferred<Module?>()
   private var appProperties: Bundle? = null
+  private var isLaunch = false
 
   override fun onCreate(savedInstanceState: Bundle?) {
-    appProperties = savedInstanceState
-
-    val mainComponentName = this.mainComponentName
-    val launchOptions = this.composeLaunchOptions()
     if (Build.VERSION.SDK_INT >= 26 && this.isWideColorGamutEnabled) {
       activity.window.colorMode = ActivityInfo.COLOR_MODE_WIDE_COLOR_GAMUT
-    };
+    }
+
+    launch()
+  }
+
+  fun setMainComponentName(mainComponentName: String) {
+    this.mainComponentName = mainComponentName
+  }
+
+  fun setAppProperties(appProperties: Bundle?) {
+    this.appProperties = appProperties
+  }
+
+  private fun launch() {
+    if (mainComponentName == null || isLaunch) return
+
+    isLaunch = true
 
     CoroutineScope(Dispatchers.IO).launch {
       (activity.application as RNFastUpdateApplication).initialModule.await()
       val moduleRepository = AppDatabase.getModuleRepository(this@RNFastActivityDelegate.context)
       if (mainComponentName != null) {
-        val module = moduleRepository.findAvailableModuleByName(mainComponentName)
+        val module = moduleRepository.findAvailableModuleByName(mainComponentName!!)
         dbSelectResult.complete(module)
       } else {
         dbSelectResult.complete(null)
@@ -50,12 +63,12 @@ class RNFastActivityDelegate(
     val mReactDelegate: ReactDelegate = if (RNFastUpdateUtil.enabledBridgelessMode) {
       ReactDelegate(
         this.plainActivity,
-        this.reactHost, mainComponentName, launchOptions
+        this.reactHost, mainComponentName, appProperties
       )
     } else {
       ReactDelegate(
         this.plainActivity,
-        this.reactNativeHost, mainComponentName, launchOptions,
+        this.reactNativeHost, mainComponentName, appProperties,
         this.isFabricEnabled
       )
     }
@@ -63,12 +76,8 @@ class RNFastActivityDelegate(
     RNFastUpdateUtil.setPrivateProperty(this, "mReactDelegate", mReactDelegate, ReactActivityDelegate::class)
 
     if (mainComponentName != null) {
-      fastUpdateLoadApp(mainComponentName)
+      fastUpdateLoadApp(mainComponentName!!)
     }
-  }
-
-  override fun getLaunchOptions(): Bundle? {
-    return appProperties?.getBundle("initialProps")
   }
 
   private fun fastUpdateLoadApp(appKey: String) {

@@ -16,14 +16,19 @@ object RNFastUpdateModuleImpl {
     mDialog.get()?.setProgress(50)
   }
 
-  fun openModule(reactContext: ReactApplicationContext, moduleName: String, initialProps: ReadableMap) {
+  fun openModule(reactContext: ReactApplicationContext, moduleName: String, initialProps: ReadableMap?) {
     val activity = reactContext.currentActivity
     if (RNFastUpdateUtil.isActivityAlive(activity)) {
-      val intent = Intent(reactContext, RNFastUpdateSingleActivity::class.java)
-      intent.putExtra("moduleName", moduleName)
-      intent.putExtra("noSplash", true)
-      intent.putExtra("initialProps", Arguments.toBundle(initialProps))
-      activity?.startActivity(intent)
+      activity?.runOnUiThread {
+        val intent = Intent(activity, RNFastUpdateSingleActivity::class.java).apply {
+          putExtra("moduleName", "Home")
+          putExtra("noSplash", true)
+          if (initialProps != null) {
+            putExtra("initialProps", Arguments.toBundle(initialProps))
+          }
+        }
+        activity.startActivity(intent)
+      }
     }
   }
 
