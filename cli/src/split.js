@@ -8,9 +8,9 @@ var _cliTools = require('@react-native-community/cli-tools');
 var _chalk = _interopRequireDefault(require('chalk'));
 var _Server = _interopRequireDefault(require('metro/src/Server'));
 var _bundle = _interopRequireDefault(require('metro/src/shared/output/bundle'));
-var _RamBundle = _interopRequireDefault(
-  require('metro/src/shared/output/RamBundle')
-);
+// var _RamBundle = _interopRequireDefault(
+//   require('metro/src/shared/output/RamBundle')
+// );
 var _path = _interopRequireDefault(require('path'));
 var loadMetroConfig = require('./utils/bundle/inner/loadMetroConfig').default;
 var genPathMacthRegExp = require('./utils/genPathMacthRegExp');
@@ -70,7 +70,6 @@ async function buildBundleWithConfig(
   args,
   ctx,
   bundleImpl = _bundle.default,
-  versionCode,
   entryFile,
   componentName,
   moduleIdMap,

@@ -4,19 +4,11 @@ const { createDirIfNotExists } = require('./fsUtils');
 
 async function isExistsCommonMap(platform, versionCode, hash) {
   const tempDir = path.join(__dirname, '../../', 'commonMap');
-  if (hash) {
-    const commonMapFile = path.join(
-      tempDir,
-      `commonMap-${platform}-${versionCode}-${hash}.json`
-    );
-    return fs.existsSync(commonMapFile);
-  } else {
-    const files = fs.readdirSync(tempDir);
-    const file = files.find((file) =>
-      file.startsWith(`commonMap-${platform}-${versionCode}`)
-    );
-    return !!file;
-  }
+  const commonMapFile = path.join(
+    tempDir,
+    `commonMap-${platform}-${versionCode}-${hash}.json`
+  );
+  return commonMapFile;
 }
 
 async function genCommonMap(platform, versionCode, hash, content) {
@@ -32,7 +24,8 @@ async function genCommonMap(platform, versionCode, hash, content) {
   );
 }
 
-async function getLatestCommonMap(platform, versionCode) {
+async function getLatestCommonMap(options) {
+  const { platform, versionCode } = options;
   const prefix = `commonMap-${platform}-${versionCode}`;
   const tempDir = path.join(__dirname, '../../', 'commonMap');
   const files = fs.readdirSync(tempDir);

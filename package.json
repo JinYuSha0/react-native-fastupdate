@@ -79,8 +79,11 @@
     "@babel/core": "^7.25.9",
     "@babel/generator": "^7.25.9",
     "@babel/types": "^7.25.9",
-    "colors": "^1.4.0",
-    "commander": "^12.1.0"
+    "axios": "^1.7.9",
+    "chalk": "4.1.2",
+    "commander": "^12.1.0",
+    "dotenv": "^16.4.7",
+    "inquirer": "^12.3.0"
   },
   "devDependencies": {
     "@commitlint/config-conventional": "^17.0.2",

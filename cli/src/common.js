@@ -8,21 +8,16 @@ var _cliTools = require('@react-native-community/cli-tools');
 var _chalk = _interopRequireDefault(require('chalk'));
 var _Server = _interopRequireDefault(require('metro/src/Server'));
 var _bundle = _interopRequireDefault(require('metro/src/shared/output/bundle'));
-var _RamBundle = _interopRequireDefault(
-  require('metro/src/shared/output/RamBundle')
-);
+// var _RamBundle = _interopRequireDefault(
+//   require('metro/src/shared/output/RamBundle')
+// );
 var _path = _interopRequireDefault(require('path'));
 var _fs = _interopRequireDefault(require('fs'));
-var colors = require('colors');
 var loadMetroConfig = require('./utils/bundle/inner/loadMetroConfig').default;
 var genPathMacthRegExp = require('./utils/genPathMacthRegExp');
 var getModuleIdFactory = require('./utils/getModuleId');
 var { genHash, genFileHash } = require('./utils/genFileHash');
-var {
-  isExistsCommonMap,
-  genCommonMap,
-  getLatestCommonMap,
-} = require('./utils/commonMap');
+var { getCommonMapInstance } = require('./utils/getCommonAdapter');
 var genPathImportScript = require('./utils/genPathImportScript');
 var { delDir, createDirIfNotExists } = require('./utils/fsUtils');
 var hbc = require('./hbc');
@@ -95,8 +90,8 @@ async function buildBundleWithConfig(
   args,
   ctx,
   bundleImpl = _bundle.default,
-  versionCode,
-  entryFiles
+  entryFiles,
+  existsCommonMap
 ) {
   args.bundleOutput =
     args.platform === 'ios'
@@ -106,18 +101,20 @@ async function buildBundleWithConfig(
           './android/app/src/main/assets/common.android.bundle'
         );
 
-  if (
-    args.common === false &&
-    (await isExistsCommonMap(args.platform, versionCode)) &&
+  const localCondition =
+    existsCommonMap &&
     _fs.default.existsSync(args.bundleOutput) &&
-    genFileHash(args.bundleOutput) ===
-      (await getLatestCommonMap(args.platform, versionCode))?.common?.hash
-  ) {
+    genFileHash(args.bundleOutput) === existsCommonMap.common.hash;
+  const remoteCondition = !!existsCommonMap;
+  const condition = args.offline ? localCondition : remoteCondition;
+
+  if (args.common === false && condition) {
     return {
       common: true,
       bundleOutput: args.bundleOutput,
       assetsDest: args.assetsDest,
-      hash: genFileHash(args.bundleOutput),
+      hash: existsCommonMap.common.hash,
+      commonMap: existsCommonMap,
     };
   }
 
@@ -138,8 +135,6 @@ async function buildBundleWithConfig(
     resetCache: args.resetCache,
     config: args.config,
   });
-
-  const platform = args.platform;
 
   const customResolverOptions = (0, _parseKeyValueParamArray.default)(
     args.resolverOption ?? []
@@ -234,37 +229,17 @@ async function buildBundleWithConfig(
     // $FlowIgnore[incompatible-exact]
     await bundleImpl.save(bundle, args, _cliTools.logger.info);
 
+    let codeHash = genHash(bundle.code);
     if (args.hbc) {
-      await hbc(args.bundleOutput);
+      const hbcFilepath = await hbc(args.bundleOutput);
+      codeHash = genFileHash(hbcFilepath);
     }
 
-    const codeHash = genHash(bundle.code);
-    const commonMapExists = await isExistsCommonMap(
-      platform,
-      versionCode,
-      codeHash
-    );
-    if (!commonMapExists) {
-      await genCommonMap(
-        platform,
-        versionCode,
-        codeHash,
-        JSON.stringify(
-          {
-            common: { id: -1, hash: genFileHash(args.bundleOutput) },
-            ...moduleIdMap,
-          },
-          null,
-          2
-        )
-      );
-    } else {
-      console.log(
-        colors.green(
-          `The common map whose versionCode is ${versionCode} and the platform is ${platform} already exists`
-        )
-      );
-    }
+    const commonMapInstance = getCommonMapInstance(args.offline);
+    const commonMap = await commonMapInstance.saveCommonMap(args, {
+      codeHash,
+      moduleIdMap,
+    });
 
     // Save the assets of the bundle
     const outputAssets = await server.getAssets({
@@ -286,6 +261,7 @@ async function buildBundleWithConfig(
       bundleOutput: args.bundleOutput,
       assetsDest: args.assetsDest,
       hash: codeHash,
+      commonMap,
     };
   } finally {
     server.end();

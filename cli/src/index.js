@@ -1,23 +1,28 @@
+require('dotenv').config();
+const inquirer = require('inquirer');
 const { program } = require('commander');
 const { execSync } = require('child_process');
 const { bundleCommand } = require('@react-native/community-cli-plugin');
 const { readFileSync } = require('fs');
 const path = require('path');
 const fs = require('fs');
+const chalk = require('chalk');
 const analyzeEntryFiles = require('./utils/analyzeEntryFiles');
 const metroBundle = require('metro/src/shared/output/bundle');
 // const metroRamBundle = require('metro/src/shared/output/RamBundle');
+const { getCommonMapInstance } = require('./utils/getCommonAdapter');
+const { request } = require('./utils/request');
 const commonBuildBundleWithConfig = require('./common');
 const splitBuildBundleWithConfig = require('./split');
 const getVersionCode = require('./utils/getVersionCode');
-const colors = require('colors');
-const { getLatestCommonMap } = require('./utils/commonMap');
 const getRegisterComponentName = require('./utils/getRegisterComponentName');
 
 const ModuleType = {
   TYPE_COMMON: 0,
   TYPE_SPLIT: 1,
 };
+
+const Environments = ['TEST', 'UAT', 'PROD'];
 
 program.version(
   JSON.parse(
@@ -38,8 +43,17 @@ program
   .option('--versionCode <string>', 'Native version code')
   .allowUnknownOption()
   .action(async function handleAction() {
+    const { FASTUPDATE_APP_ID, FASTUPDATE_APP_SECRET } = process.env;
+
     let config = null;
     let options = program.opts();
+
+    if (!options.offline && (!FASTUPDATE_APP_ID || !FASTUPDATE_APP_SECRET)) {
+      console.log(
+        chalk.red('Please set env FASTUPDATE_APP_ID and FASTUPDATE_APP_SECRET')
+      );
+      return;
+    }
 
     if (options.loadConfig != null) {
       config = JSON.parse(
@@ -52,18 +66,50 @@ program
     }
 
     if (config == null) {
-      throw new Error('No config provided');
+      console.log(chalk.red('No config provided'));
+      return;
     }
 
-    const versionCode = options.versionCode ?? getVersionCode(options.platform);
+    const versionCode = (options.versionCode =
+      options.versionCode ?? getVersionCode(options.platform));
     if (versionCode === null || isNaN(+versionCode)) {
       console.log(
-        colors.red.underline(
-          `versionCode "${versionCode}" is not a correct number`
-        )
+        chalk.red(`versionCode "${versionCode}" is not a correct number`)
       );
       return;
     }
+
+    options.dependencies = Object.values(config.dependencies).reduce((a, b) => {
+      const naviveInfo = b.platforms[options.platform];
+      if (naviveInfo) {
+        a[b.name] = naviveInfo.version;
+      }
+      return a;
+    }, {});
+
+    let environments = Environments;
+    if (!options.offline) {
+      const remoteConfig = await request.get('/publish/getConfig');
+      environments = remoteConfig.environments.map((item) => item.type);
+    }
+
+    if (!options.environment || !environments.includes(options.environment)) {
+      options.environment = (
+        await inquirer.default.prompt([
+          {
+            type: 'list',
+            name: 'environment',
+            message: 'What environment are you going to publish?',
+            choices: environments,
+            default: environments[0],
+          },
+        ])
+      ).environment;
+    }
+
+    const commonMapInstance = getCommonMapInstance(options.offline);
+
+    const existsCommonMap = await commonMapInstance.getCommonMap(options);
 
     const entryFiles = analyzeEntryFiles(path.basename(options.entryFile));
 
@@ -74,12 +120,12 @@ program
           : path.join(process.cwd(), './android/app/src/main/res');
     }
 
-    await commonBuildBundleWithConfig(
+    const { commonMap } = await commonBuildBundleWithConfig(
       { ...options },
       config,
       metroBundle,
-      versionCode,
-      entryFiles
+      entryFiles,
+      existsCommonMap
     );
 
     const splipModules = (
@@ -91,17 +137,13 @@ program
     const duplicateComponentNames = hasDuplicateComponentNames(splipModules);
     if (duplicateComponentNames) {
       console.log(
-        colors.red.underline(
+        chalk.red(
           `There is a duplicate componentName: ${duplicateComponentNames}`
         )
       );
       return;
     }
-    const latestCommonMap = await getLatestCommonMap(
-      options.platform,
-      versionCode
-    );
-    const commonMapSize = Object.keys(latestCommonMap).length + 1;
+    const commonMapSize = Object.keys(commonMap).length + 1;
 
     const splitRes = await Promise.all(
       splipModules
@@ -111,10 +153,9 @@ program
             { ...options },
             config,
             metroBundle,
-            versionCode,
             module.entryFile,
             module.componentName,
-            latestCommonMap,
+            commonMap,
             commonMapSize + (index + 1) * 100000000
           )
         )
@@ -127,14 +168,27 @@ program
       type: module.common ? ModuleType.TYPE_COMMON : ModuleType.TYPE_SPLIT,
     }));
 
+    const configOutputDir =
+      options.platform === 'ios'
+        ? path.join(process.cwd(), './ios')
+        : path.join(process.cwd(), './android/app/src/main/assets');
+
     fs.writeFileSync(
-      path.join(
-        options.platform === 'ios'
-          ? path.join(process.cwd(), './ios')
-          : path.join(process.cwd(), './android/app/src/main/assets'),
-        'modules.config.json'
-      ),
+      path.join(configOutputDir, 'modules.fastupdate-config.json'),
       JSON.stringify(modulesConfig, null, 2)
+    );
+
+    fs.writeFileSync(
+      path.join(configOutputDir, 'app.fastupdate-config.json'),
+      JSON.stringify(
+        {
+          environment: options.environment,
+          versionCode: options.versionCode,
+          commonHash: commonMap.common.hash,
+        },
+        null,
+        2
+      )
     );
   });
 
@@ -205,6 +259,19 @@ program.option(
   'Use hermes bytecode (default: true)',
   (val) => val !== 'false',
   true
+);
+
+program.option(
+  '--environment <string>',
+  'What environment are you going to publish?',
+  (val) => String(val).toLocaleUpperCase()
+);
+
+program.option(
+  '--offline [boolean]',
+  'offline mode',
+  (val) => val !== 'false',
+  false
 );
 
 program.parse(process.argv);
